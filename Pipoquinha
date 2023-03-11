@@ -1,0 +1,118 @@
+<?php
+
+$bot_token = 'your_bot_token_here';
+
+$openai_api_key = 'your_openai_api_key_here';
+
+$raw_input = file_get_contents('php://input');
+
+$update = json_decode($raw_input, true);
+
+if(isset($update['message'])) {
+
+  $chat_id = $update['message']['chat']['id'];
+
+  $text = $update['message']['text'];
+
+  
+
+  // Send the user's message to OpenAI's API and receive a response
+
+  $response = send_to_openai($text);
+
+  
+
+  // Send the response back to the user via Telegram's API
+
+  send_to_telegram($chat_id, $response);
+
+}
+
+function send_to_openai($message) {
+
+  global $openai_api_key;
+
+  
+
+  $url = "https://api.openai.com/v1/engines/davinci-codex/completions";
+
+  $data = array(
+
+    'prompt' => $message,
+
+    'temperature' => 0.5,
+
+    'max_tokens' => 100,
+
+    'n' => 1,
+
+    'stop' => ['\n']
+
+  );
+
+  $headers = array(
+
+    'Content-Type: application/json',
+
+    'Authorization: Bearer '.$openai_api_key
+
+  );
+
+  $options = array(
+
+    'http' => array(
+
+      'method' => 'POST',
+
+      'header' => implode("\r\n", $headers),
+
+      'content' => json_encode($data)
+
+    )
+
+  );
+
+  $context = stream_context_create($options);
+
+  $result = file_get_contents($url, false, $context);
+
+  $response = json_decode($result, true)['choices'][0]['text'];
+
+  
+
+  return $response;
+
+}
+
+function send_to_telegram($chat_id, $message) {
+
+  global $bot_token;
+
+  
+
+  $url = "https://api.telegram.org/bot{$bot_token}/sendMessage";
+
+  $data = array('chat_id' => $chat_id, 'text' => $message);
+
+  $options = array(
+
+    'http' => array(
+
+      'method' => 'POST',
+
+      'header' => 'Content-Type: application/json',
+
+      'content' => json_encode($data)
+
+    )
+
+  );
+
+  $context = stream_context_create($options);
+
+  $result = file_get_contents($url, false, $context);
+
+}
+
+?>
+
