@@ -1,1 +1,3 @@
-# Telegram-bot-openai
+# Telegram-bot-openai 
+
+criado em php 
